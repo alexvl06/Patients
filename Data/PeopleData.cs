@@ -19,7 +19,12 @@ namespace Patients.Data
                     using (var cmd = new SqlCommand("SELECT dbo.getPatients()", sql))
                     {
                         await sql.OpenAsync();
-                        JArray jsonResult = JArray.Parse((string)cmd.ExecuteScalar());
+                        var result = cmd.ExecuteScalar();
+                        if(result == DBNull.Value)
+                        {
+                            return list;
+                        }
+                        JArray jsonResult = JArray.Parse((string)result);
                         foreach (var item in jsonResult)
                         {
                             PatientPerson? patient = item.ToObject<PatientPerson>();
@@ -122,6 +127,7 @@ namespace Patients.Data
 
         public async Task InsertDoctor(Person parameters)
         {
+            Console.WriteLine(parameters);
             try
             {
                 using (var sql = new SqlConnection(connection.SQLString()))
@@ -144,11 +150,6 @@ namespace Patients.Data
                         cmd.Parameters.AddWithValue("@registered_at", parameters.Registered_At);
                         cmd.Parameters.AddWithValue("@id", parameters.Id);
                         cmd.Parameters["@out_date"].Value = DBNull.Value;
-                        if (parameters.Out_Date > new DateTime(1754, 1, 1))
-                        {
-
-                            cmd.Parameters["@out_date"].Value = parameters.Out_Date;
-                        }
                         cmd.Parameters["@landline"].Value = ValidateData.ValidateSQLData(parameters.Landline);
                         await cmd.ExecuteNonQueryAsync();
 
